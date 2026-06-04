@@ -1,0 +1,47 @@
+name: Build Fresh Standalone Wallet
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Setup Expo CLI
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: latest
+        eas-version: latest
+
+    - name: Prebuild Native Android Assets
+      run: npx expo prebuild --platform android
+
+    - name: Set up Java Environment
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Compile Standalone APK
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleRelease
+
+    - name: Upload Finished Wallet
+      uses: actions/upload-artifact@v4
+      with:
+        name: Clean-Wallet-v2
+        path: android/app/build/outputs/apk/release/app-release-unsigned.apk
